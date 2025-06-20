@@ -28,19 +28,61 @@
         /// </summary>
         private void InitializeComponent()
         {
+            richTextBox1 = new RichTextBox();
+            btnBrowse = new Button();
+            webView21 = new Microsoft.Web.WebView2.WinForms.WebView2();
+            ((System.ComponentModel.ISupportInitialize)webView21).BeginInit();
             SuspendLayout();
+            // 
+            // richTextBox1
+            // 
+            richTextBox1.Location = new Point(782, 12);
+            richTextBox1.Name = "richTextBox1";
+            richTextBox1.Size = new Size(444, 567);
+            richTextBox1.TabIndex = 0;
+            richTextBox1.Text = "";
+            richTextBox1.TextChanged += richTextBox1_TextChanged;
+            // 
+            // btnBrowse
+            // 
+            btnBrowse.Location = new Point(806, 602);
+            btnBrowse.Name = "btnBrowse";
+            btnBrowse.Size = new Size(75, 23);
+            btnBrowse.TabIndex = 1;
+            btnBrowse.Text = "Browse File";
+            btnBrowse.UseVisualStyleBackColor = true;
+            btnBrowse.Click += btnBrowse_Click;
+            // 
+            // webView21
+            // 
+            webView21.AllowExternalDrop = true;
+            webView21.CreationProperties = null;
+            webView21.DefaultBackgroundColor = Color.White;
+            webView21.Location = new Point(61, 12);
+            webView21.Name = "webView21";
+            webView21.Size = new Size(485, 550);
+            webView21.TabIndex = 2;
+            webView21.ZoomFactor = 1D;
             // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(1278, 741);
+            Controls.Add(webView21);
+            Controls.Add(btnBrowse);
+            Controls.Add(richTextBox1);
             Name = "Form1";
             Text = "Form1";
             Load += Form1_Load;
+            ((System.ComponentModel.ISupportInitialize)webView21).EndInit();
             ResumeLayout(false);
         }
 
         #endregion
+
+        private RichTextBox richTextBox1;
+        private Button btnBrowse;
+        private Microsoft.Web.WebView2.WinForms.WebView2 webView21;
     }
 }
