@@ -31,6 +31,9 @@
             richTextBox1 = new RichTextBox();
             btnBrowse = new Button();
             webView21 = new Microsoft.Web.WebView2.WinForms.WebView2();
+            richTextBoxResponse = new RichTextBox();
+            richTextBoxQuestion = new RichTextBox();
+            btnAsk = new Button();
             ((System.ComponentModel.ISupportInitialize)webView21).BeginInit();
             SuspendLayout();
             // 
@@ -58,17 +61,49 @@
             webView21.AllowExternalDrop = true;
             webView21.CreationProperties = null;
             webView21.DefaultBackgroundColor = Color.White;
-            webView21.Location = new Point(61, 12);
+            webView21.Location = new Point(763, 12);
             webView21.Name = "webView21";
-            webView21.Size = new Size(485, 550);
+            webView21.Size = new Size(485, 567);
             webView21.TabIndex = 2;
             webView21.ZoomFactor = 1D;
+            // 
+            // richTextBoxResponse
+            // 
+            richTextBoxResponse.Location = new Point(32, 12);
+            richTextBoxResponse.Name = "richTextBoxResponse";
+            richTextBoxResponse.ReadOnly = true;
+            richTextBoxResponse.Size = new Size(622, 509);
+            richTextBoxResponse.TabIndex = 3;
+            richTextBoxResponse.Text = "";
+            richTextBoxResponse.TextChanged += richTextBoxResponse_TextChanged;
+            // 
+            // richTextBoxQuestion
+            // 
+            richTextBoxQuestion.Location = new Point(32, 555);
+            richTextBoxQuestion.Name = "richTextBoxQuestion";
+            richTextBoxQuestion.Size = new Size(622, 86);
+            richTextBoxQuestion.TabIndex = 4;
+            richTextBoxQuestion.Text = "";
+            richTextBoxQuestion.TextChanged += richTextBoxQuestion_TextChanged;
+            // 
+            // btnAsk
+            // 
+            btnAsk.Location = new Point(305, 659);
+            btnAsk.Name = "btnAsk";
+            btnAsk.Size = new Size(75, 23);
+            btnAsk.TabIndex = 5;
+            btnAsk.Text = "Ask Agent";
+            btnAsk.UseVisualStyleBackColor = true;
+            btnAsk.Click += btnAsk_Click;
             // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(1278, 741);
+            Controls.Add(btnAsk);
+            Controls.Add(richTextBoxQuestion);
+            Controls.Add(richTextBoxResponse);
             Controls.Add(webView21);
             Controls.Add(btnBrowse);
             Controls.Add(richTextBox1);
@@ -84,5 +119,8 @@
         private RichTextBox richTextBox1;
         private Button btnBrowse;
         private Microsoft.Web.WebView2.WinForms.WebView2 webView21;
+        private RichTextBox richTextBoxResponse;
+        private RichTextBox richTextBoxQuestion;
+        private Button btnAsk;
     }
 }
