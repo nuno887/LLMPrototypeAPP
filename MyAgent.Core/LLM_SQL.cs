@@ -13,6 +13,8 @@ public class LLM_SQL
 {
     private readonly OllamaClient _ollama;
     private readonly string _connectionString;
+    private readonly HashSet<string> AllowedTables = new();
+    private const int MaxAttempts = 3;
 
     public LLM_SQL(string dbPath, string modelName)
     {
@@ -64,19 +66,35 @@ User question:
 {question}
 ";
 
-        string sqlQuery = await _ollama.AskAsync(prompt);
-        string cleanSqlQuery = sqlQuery;
+        string sqlQuery = string.Empty;
+        string cleanSqlQuery = string.Empty;
 
-        try
+        for (int attempt = 1; attempt <= MaxAttempts; attempt++)
         {
-            var jsonDoc = JsonDocument.Parse(sqlQuery);
-            if (jsonDoc.RootElement.TryGetProperty("response", out var responseElement))
+            sqlQuery = await _ollama.AskAsync(prompt);
+            cleanSqlQuery = sqlQuery;
+
+            try
             {
-                cleanSqlQuery = responseElement.GetString();
+                var jsonDoc = JsonDocument.Parse(sqlQuery);
+                if (jsonDoc.RootElement.TryGetProperty("response", out var responseElement))
+                {
+                    cleanSqlQuery = responseElement.GetString();
+                }
             }
-        }
-        catch
-        {
+            catch
+            {
+            }
+
+            if (IsValidSQL(cleanSqlQuery))
+            {
+                break;
+            }
+
+            if (attempt == MaxAttempts)
+            {
+                return "[Blocked] SQL contains unauthorized tables after multiple attempts.";
+            }
         }
 
         string queryResult = ExecuteQuery(cleanSqlQuery);
@@ -105,7 +123,8 @@ User question:
         using var connection = new SQLiteConnection(_connectionString);
         connection.Open();
 
-        var schemaText = new System.Text.StringBuilder();
+        var schemaText = new StringBuilder();
+        AllowedTables.Clear();
 
         using var cmd = new SQLiteCommand("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%';", connection);
         using var reader = cmd.ExecuteReader();
@@ -113,6 +132,7 @@ User question:
         while (reader.Read())
         {
             string tableName = reader.GetString(0);
+            AllowedTables.Add(tableName);
             schemaText.AppendLine($"\nTable: {tableName}");
 
             using var columnCmd = new SQLiteCommand($"PRAGMA table_info({tableName});", connection);
@@ -131,6 +151,16 @@ User question:
         }
 
         return schemaText.ToString();
+    }
+
+    private bool IsValidSQL(string sql)
+    {
+        foreach (string table in AllowedTables)
+        {
+            if (sql.Contains(table, StringComparison.OrdinalIgnoreCase))
+                return true;
+        }
+        return false;
     }
 
     private string ExecuteQuery(string sql)
