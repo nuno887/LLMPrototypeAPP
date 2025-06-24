@@ -31,10 +31,17 @@
             richTextBox1 = new RichTextBox();
             btnBrowse = new Button();
             webView21 = new Microsoft.Web.WebView2.WinForms.WebView2();
-            richTextBoxResponse = new RichTextBox();
             richTextBoxQuestion = new RichTextBox();
             btnAsk = new Button();
+            tabControl1 = new TabControl();
+            Answer = new TabPage();
+            Notes = new TabPage();
+            richTextBoxAnswer = new RichTextBox();
+            richTextBoxNotes = new RichTextBox();
             ((System.ComponentModel.ISupportInitialize)webView21).BeginInit();
+            tabControl1.SuspendLayout();
+            Answer.SuspendLayout();
+            Notes.SuspendLayout();
             SuspendLayout();
             // 
             // richTextBox1
@@ -67,16 +74,6 @@
             webView21.TabIndex = 2;
             webView21.ZoomFactor = 1D;
             // 
-            // richTextBoxResponse
-            // 
-            richTextBoxResponse.Location = new Point(32, 12);
-            richTextBoxResponse.Name = "richTextBoxResponse";
-            richTextBoxResponse.ReadOnly = true;
-            richTextBoxResponse.Size = new Size(622, 509);
-            richTextBoxResponse.TabIndex = 3;
-            richTextBoxResponse.Text = "";
-            richTextBoxResponse.TextChanged += richTextBoxResponse_TextChanged;
-            // 
             // richTextBoxQuestion
             // 
             richTextBoxQuestion.Location = new Point(32, 555);
@@ -96,14 +93,64 @@
             btnAsk.UseVisualStyleBackColor = true;
             btnAsk.Click += btnAsk_Click;
             // 
+            // tabControl1
+            // 
+            tabControl1.Controls.Add(Answer);
+            tabControl1.Controls.Add(Notes);
+            tabControl1.Location = new Point(33, 29);
+            tabControl1.Name = "tabControl1";
+            tabControl1.SelectedIndex = 0;
+            tabControl1.Size = new Size(621, 520);
+            tabControl1.TabIndex = 6;
+            // 
+            // Answer
+            // 
+            Answer.Controls.Add(richTextBoxAnswer);
+            Answer.Location = new Point(4, 24);
+            Answer.Name = "Answer";
+            Answer.Padding = new Padding(3);
+            Answer.Size = new Size(613, 492);
+            Answer.TabIndex = 0;
+            Answer.Text = "Answer";
+            Answer.UseVisualStyleBackColor = true;
+            // 
+            // Notes
+            // 
+            Notes.Controls.Add(richTextBoxNotes);
+            Notes.Location = new Point(4, 24);
+            Notes.Name = "Notes";
+            Notes.Padding = new Padding(3);
+            Notes.Size = new Size(613, 492);
+            Notes.TabIndex = 1;
+            Notes.Text = "Notes";
+            Notes.UseVisualStyleBackColor = true;
+            // 
+            // richTextBoxAnswer
+            // 
+            richTextBoxAnswer.Location = new Point(0, 0);
+            richTextBoxAnswer.Name = "richTextBoxAnswer";
+            richTextBoxAnswer.Size = new Size(613, 496);
+            richTextBoxAnswer.TabIndex = 0;
+            richTextBoxAnswer.Text = "";
+            richTextBoxAnswer.TextChanged += richTextBox2_TextChanged;
+            // 
+            // richTextBoxNotes
+            // 
+            richTextBoxNotes.Location = new Point(0, 0);
+            richTextBoxNotes.Name = "richTextBoxNotes";
+            richTextBoxNotes.Size = new Size(613, 496);
+            richTextBoxNotes.TabIndex = 0;
+            richTextBoxNotes.Text = "";
+            richTextBoxNotes.TextChanged += richTextBoxNotes_TextChanged;
+            // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(1278, 741);
+            Controls.Add(tabControl1);
             Controls.Add(btnAsk);
             Controls.Add(richTextBoxQuestion);
-            Controls.Add(richTextBoxResponse);
             Controls.Add(webView21);
             Controls.Add(btnBrowse);
             Controls.Add(richTextBox1);
@@ -111,6 +158,9 @@
             Text = "Form1";
             Load += Form1_Load;
             ((System.ComponentModel.ISupportInitialize)webView21).EndInit();
+            tabControl1.ResumeLayout(false);
+            Answer.ResumeLayout(false);
+            Notes.ResumeLayout(false);
             ResumeLayout(false);
         }
 
@@ -119,8 +169,12 @@
         private RichTextBox richTextBox1;
         private Button btnBrowse;
         private Microsoft.Web.WebView2.WinForms.WebView2 webView21;
-        private RichTextBox richTextBoxResponse;
         private RichTextBox richTextBoxQuestion;
         private Button btnAsk;
+        private TabControl tabControl1;
+        private TabPage Answer;
+        private TabPage Notes;
+        private RichTextBox richTextBoxAnswer;
+        private RichTextBox richTextBoxNotes;
     }
 }

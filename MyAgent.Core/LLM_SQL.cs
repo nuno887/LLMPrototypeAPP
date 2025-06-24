@@ -22,7 +22,7 @@ public class LLM_SQL
         _ollama = new OllamaClient(modelName);
     }
 
-    public async Task<string> ProcessQuestionAsync(string question)
+    public async Task<LLMResult> ProcessQuestionAsync(string question)
     {
         string schemaInfo = GetDatabaseSchema();
 
@@ -93,8 +93,13 @@ User question:
 
             if (attempt == MaxAttempts)
             {
-                return "[Blocked] SQL contains unauthorized tables after multiple attempts.";
+                return new LLMResult
+                {
+                    Notes = "[Blocked] SQL contains unauthorized tables after multiple attempts.",
+                    Answer = "[Blocked] SQL contains unauthorized tables after multiple attempts."
+                };
             }
+
         }
 
         string queryResult = ExecuteQuery(cleanSqlQuery);
@@ -115,7 +120,11 @@ User question:
         {
         }
 
-        return cleanFinalResponse;
+        return new LLMResult
+        {
+            Notes = queryResult,
+            Answer = cleanFinalResponse
+        };
     }
 
     private string GetDatabaseSchema()

@@ -9,7 +9,7 @@ public class LLM_Normal
         _ollama = new OllamaClient(modelName);
     }
 
-    public async Task<string> ProcessQuestionAsync(string question)
+    public async Task<LLMResult> ProcessQuestionAsync(string question)
     {
         string prompt = $@"
 You are a helpful AI assistant. Answer the user's question clearly and concisely.
@@ -19,20 +19,26 @@ User question:
 
         string result = await _ollama.AskAsync(prompt);
 
+        string cleanAnswer = result;
+
         // Attempt to extract clean text if JSON is returned
         try
         {
             using var doc = System.Text.Json.JsonDocument.Parse(result);
             if (doc.RootElement.TryGetProperty("response", out var responseElement))
             {
-                return responseElement.GetString() ?? "[Empty response]";
+                cleanAnswer = responseElement.GetString() ?? "[Empty response]";
             }
-            return "[Unexpected response structure]";
         }
         catch
         {
             // If not valid JSON, assume plain text answer
-            return result;
         }
+
+        return new LLMResult
+        {
+            Notes = result,      // Keep raw LLM output as Notes
+            Answer = cleanAnswer // Cleaned, readable answer
+        };
     }
 }

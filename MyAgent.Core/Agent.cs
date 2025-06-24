@@ -1,4 +1,10 @@
-﻿namespace MyAgent.Core;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace MyAgent.Core;
 
 public class Agent
 {
@@ -13,30 +19,51 @@ public class Agent
         _normalLLM = new LLM_Normal(normalModelName);
     }
 
-    public async Task<string> AskAsync(string question)
+    public async Task<LLMResult> AskAsync(string question)
     {
-        const int maxAttempts = 3;
-
         string toolDecision = await DecideToolWithLLM(question);
 
         bool useSQL = toolDecision.Contains("SQL");
         bool useRAG = toolDecision.Contains("RAG");
         bool useNORMAL = toolDecision.Contains("NORMAL");
 
-        string combinedAnswer = "";
+        var finalNotes = new StringBuilder();
+        var finalAnswer = new StringBuilder();
 
         if (useSQL)
-            combinedAnswer += await _sqlLLM.ProcessQuestionAsync(question) + "\n";
+        {
+            var sqlResult = await _sqlLLM.ProcessQuestionAsync(question);
+            finalNotes.AppendLine("[SQL Notes]");
+            finalNotes.AppendLine(sqlResult.Notes);
+            finalAnswer.AppendLine(sqlResult.Answer);
+        }
 
         if (useRAG)
-            combinedAnswer += await _ragLLM.ProcessQuestionAsync(question) + "\n";
+        {
+            var ragResult = await _ragLLM.ProcessQuestionAsync(question);
+            finalNotes.AppendLine("[RAG Notes]");
+            finalNotes.AppendLine(ragResult.Notes);
+            finalAnswer.AppendLine(ragResult.Answer);
+        }
 
         if (useNORMAL)
-            combinedAnswer += await _normalLLM.ProcessQuestionAsync(question) + "\n";
+        {
+            var normalResult = await _normalLLM.ProcessQuestionAsync(question);
+            finalNotes.AppendLine("[NORMAL Notes]");
+            finalNotes.AppendLine(normalResult.Notes);
+            finalAnswer.AppendLine(normalResult.Answer);
+        }
 
-        return string.IsNullOrWhiteSpace(combinedAnswer)
-            ? "Unable to determine the appropriate tool(s) for this question."
-            : combinedAnswer.Trim();
+        if (finalAnswer.Length == 0)
+        {
+            finalAnswer.Append("Unable to determine the appropriate tool(s) for this question.");
+        }
+
+        return new LLMResult
+        {
+            Notes = finalNotes.ToString().Trim(),
+            Answer = finalAnswer.ToString().Trim()
+        };
     }
 
     private async Task<string> DecideToolWithLLM(string question)
@@ -54,8 +81,8 @@ You can select more than one tool if appropriate. Respond with one or more of: S
 User question:
 {question}";
 
-        string decision = await _normalLLM.ProcessQuestionAsync(prompt);
+        var decisionResult = await _normalLLM.ProcessQuestionAsync(prompt);
 
-        return decision.Trim().ToUpper();
+        return decisionResult.Answer.Trim().ToUpper();
     }
 }

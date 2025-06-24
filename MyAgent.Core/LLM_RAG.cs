@@ -1,8 +1,10 @@
 ﻿using System;
-using System.Net.Http;
+using System.Collections.Generic;
+using System.Linq;
 using System.Text;
-using System.Text.Json;
 using System.Threading.Tasks;
+using System.Net.Http;
+using System.Text.Json;
 
 namespace MyAgent.Core;
 
@@ -17,7 +19,7 @@ public class LLM_RAG
         _ragApiUrl = ragApiUrl;
     }
 
-    public async Task<string> ProcessQuestionAsync(string question)
+    public async Task<LLMResult> ProcessQuestionAsync(string question)
     {
         string prompt = $@"
 You are an AI assistant that retrieves relevant documents to help answer the user's question.
@@ -36,24 +38,34 @@ User question:
             response.EnsureSuccessStatusCode();
 
             var result = await response.Content.ReadAsStringAsync();
+            string cleanAnswer = result;
 
             try
             {
                 using var doc = JsonDocument.Parse(result);
                 if (doc.RootElement.TryGetProperty("response", out var responseElement))
                 {
-                    return responseElement.GetString() ?? "[RAG returned empty]";
+                    cleanAnswer = responseElement.GetString() ?? "[RAG returned empty]";
                 }
-                return "[Unexpected RAG response structure]";
             }
             catch
             {
-                return $"[Invalid JSON from RAG] {result}";
+                cleanAnswer = $"[Invalid JSON from RAG] {result}";
             }
+
+            return new LLMResult
+            {
+                Notes = result,
+                Answer = cleanAnswer
+            };
         }
         catch (Exception ex)
         {
-            return $"[RAG Error] {ex.Message}";
+            return new LLMResult
+            {
+                Notes = $"[RAG Error] {ex.Message}",
+                Answer = $"[RAG Error] {ex.Message}"
+            };
         }
     }
 }

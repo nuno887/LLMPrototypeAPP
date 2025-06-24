@@ -110,11 +110,13 @@ namespace LLMPrototype
                     return;
                 }
 
-                richTextBoxResponse.Text = "Processing...";
+                richTextBoxAnswer.Text = "Processing...";
+                richTextBoxNotes.Text = "";
 
-                string response = await _agent.AskAsync(question);
+                var result = await _agent.AskAsync(question);
 
-                richTextBoxResponse.Text = response;
+                richTextBoxAnswer.Text = result.Answer;
+                richTextBoxNotes.Text = result.Notes;
             }
             catch (Exception ex)
             {
@@ -123,5 +125,14 @@ namespace LLMPrototype
         }
 
 
+        private void richTextBox2_TextChanged(object sender, EventArgs e)
+        {
+
+        }
+
+        private void richTextBoxNotes_TextChanged(object sender, EventArgs e)
+        {
+
+        }
     }
 }
