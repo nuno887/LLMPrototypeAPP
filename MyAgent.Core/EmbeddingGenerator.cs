@@ -20,7 +20,7 @@ namespace MyAgent.Core
 
             var requestBody = new
             {
-                model = "mxbai-embed-large:latest",
+                model = "nomic-embed-text:latest",
                 prompt = text
             };
 

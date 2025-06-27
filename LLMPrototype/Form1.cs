@@ -21,11 +21,13 @@ namespace LLMPrototype
             webView21.Visible = false;
 
             string dbPath = "C:\\Users\\nuno.ms.goncalves\\Desktop\\DataBases\\my_database.db";
-            string sqlModel = "llama3";
-            string ragApiUrl = "http://127.0.0.1:8000/query";
+            string sqlModel = "magistral:latest ";
+            string ragApiUrl = "http://127.0.0.1:8000/query"; //Needs to change for the SQL Server
             string normalModel = "llama3";
 
             _agent = new Agent(dbPath, sqlModel, ragApiUrl, normalModel);
+
+            btnImportJson.Enabled = false;
         }
 
         private void Form1_Load(object sender, EventArgs e) { }
@@ -136,12 +138,13 @@ namespace LLMPrototype
 
         }
 
-        private void btnImportJson_Click(object sender, EventArgs e)
+
+        private async void btnImportJson_Click(object sender, EventArgs e)
         {
+            btnImportJson.Enabled = false; // Disable the button at the start
+
             string jsonFolder = @"C:\Users\nuno.ms.goncalves\Desktop\SpaCy_NET\DATA\JSON";
             string connectionString = "Server=localhost\\MSSQLSERVER02;Database=GovernmentDocs;Trusted_Connection=True;";
-
-
 
             var processor = new RelatorioProcessor(connectionString);
 
@@ -157,7 +160,7 @@ namespace LLMPrototype
 
                 foreach (string jsonFilePath in jsonFiles)
                 {
-                    processor.ProcessJsonFile(jsonFilePath);
+                    await processor.ProcessJsonFileAsync(jsonFilePath);
                 }
 
                 MessageBox.Show($"Import completed successfully for {jsonFiles.Length} files.", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
@@ -166,7 +169,12 @@ namespace LLMPrototype
             {
                 MessageBox.Show($"Error during import: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
+            finally
+            {
+                btnImportJson.Enabled = true; // Re-enable the button even if there's an error
+            }
         }
+
 
         private void btnTestConnection_Click(object sender, EventArgs e)
         {
