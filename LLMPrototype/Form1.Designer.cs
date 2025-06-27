@@ -35,9 +35,11 @@
             btnAsk = new Button();
             tabControl1 = new TabControl();
             Answer = new TabPage();
-            Notes = new TabPage();
             richTextBoxAnswer = new RichTextBox();
+            Notes = new TabPage();
             richTextBoxNotes = new RichTextBox();
+            btnImportJson = new Button();
+            btnTestConnection = new Button();
             ((System.ComponentModel.ISupportInitialize)webView21).BeginInit();
             tabControl1.SuspendLayout();
             Answer.SuspendLayout();
@@ -114,6 +116,15 @@
             Answer.Text = "Answer";
             Answer.UseVisualStyleBackColor = true;
             // 
+            // richTextBoxAnswer
+            // 
+            richTextBoxAnswer.Location = new Point(0, 0);
+            richTextBoxAnswer.Name = "richTextBoxAnswer";
+            richTextBoxAnswer.Size = new Size(613, 496);
+            richTextBoxAnswer.TabIndex = 0;
+            richTextBoxAnswer.Text = "";
+            richTextBoxAnswer.TextChanged += richTextBox2_TextChanged;
+            // 
             // Notes
             // 
             Notes.Controls.Add(richTextBoxNotes);
@@ -125,15 +136,6 @@
             Notes.Text = "Notes";
             Notes.UseVisualStyleBackColor = true;
             // 
-            // richTextBoxAnswer
-            // 
-            richTextBoxAnswer.Location = new Point(0, 0);
-            richTextBoxAnswer.Name = "richTextBoxAnswer";
-            richTextBoxAnswer.Size = new Size(613, 496);
-            richTextBoxAnswer.TabIndex = 0;
-            richTextBoxAnswer.Text = "";
-            richTextBoxAnswer.TextChanged += richTextBox2_TextChanged;
-            // 
             // richTextBoxNotes
             // 
             richTextBoxNotes.Location = new Point(0, 0);
@@ -143,11 +145,33 @@
             richTextBoxNotes.Text = "";
             richTextBoxNotes.TextChanged += richTextBoxNotes_TextChanged;
             // 
+            // btnImportJson
+            // 
+            btnImportJson.Location = new Point(1083, 659);
+            btnImportJson.Name = "btnImportJson";
+            btnImportJson.Size = new Size(165, 23);
+            btnImportJson.TabIndex = 7;
+            btnImportJson.Text = "Import JSON to Database";
+            btnImportJson.UseVisualStyleBackColor = true;
+            btnImportJson.Click += btnImportJson_Click;
+            // 
+            // btnTestConnection
+            // 
+            btnTestConnection.Location = new Point(717, 649);
+            btnTestConnection.Name = "btnTestConnection";
+            btnTestConnection.Size = new Size(75, 23);
+            btnTestConnection.TabIndex = 8;
+            btnTestConnection.Text = "TestConnection";
+            btnTestConnection.UseVisualStyleBackColor = true;
+            btnTestConnection.Click += btnTestConnection_Click;
+            // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(1278, 741);
+            Controls.Add(btnTestConnection);
+            Controls.Add(btnImportJson);
             Controls.Add(tabControl1);
             Controls.Add(btnAsk);
             Controls.Add(richTextBoxQuestion);
@@ -176,5 +200,7 @@
         private TabPage Notes;
         private RichTextBox richTextBoxAnswer;
         private RichTextBox richTextBoxNotes;
+        private Button btnImportJson;
+        private Button btnTestConnection;
     }
 }

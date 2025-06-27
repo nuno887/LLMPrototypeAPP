@@ -1,5 +1,6 @@
 using MyAgent.Core;
 using System;
+using System.Data.SqlClient;
 using System.IO;
 using System.Linq;
 using System.Windows.Forms;
@@ -134,5 +135,56 @@ namespace LLMPrototype
         {
 
         }
+
+        private void btnImportJson_Click(object sender, EventArgs e)
+        {
+            string jsonFolder = @"C:\Users\nuno.ms.goncalves\Desktop\SpaCy_NET\DATA\JSON";
+            string connectionString = "Server=localhost\\MSSQLSERVER02;Database=GovernmentDocs;Trusted_Connection=True;";
+
+
+
+            var processor = new RelatorioProcessor(connectionString);
+
+            try
+            {
+                string[] jsonFiles = Directory.GetFiles(jsonFolder, "*.json");
+
+                if (jsonFiles.Length == 0)
+                {
+                    MessageBox.Show("No JSON files found in the directory.", "Information", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    return;
+                }
+
+                foreach (string jsonFilePath in jsonFiles)
+                {
+                    processor.ProcessJsonFile(jsonFilePath);
+                }
+
+                MessageBox.Show($"Import completed successfully for {jsonFiles.Length} files.", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error during import: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void btnTestConnection_Click(object sender, EventArgs e)
+        {
+            string connectionString = "Server=localhost\\MSSQLSERVER02;Database=GovernmentDocs;Trusted_Connection=True;";
+
+            try
+            {
+                using (SqlConnection conn = new SqlConnection(connectionString))
+                {
+                    conn.Open();
+                    MessageBox.Show("Connection successful!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Connection failed: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
     }
 }
