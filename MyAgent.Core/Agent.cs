@@ -11,17 +11,23 @@ public class Agent
     private readonly LLM_Normal _normalLLM;
     private readonly VectorDatabaseService _vectorService;
 
-    public Agent(string dbConnectionString, string sqlModelName, string normalModelName, string vectorDbConnectionString)
+    public Agent(
+    string dbConnectionString,
+    string sqlModelName,
+    string normalModelName,
+    string vectorDbConnectionString,
+    string ragModelName)
     {
         _sqlLLM = new LLM_SQL(dbConnectionString, sqlModelName);
-        _ragLLM = new LLM_RAG(vectorDbConnectionString);
+        _ragLLM = new LLM_RAG(ragModelName);
         _normalLLM = new LLM_Normal(normalModelName);
         _vectorService = new VectorDatabaseService(vectorDbConnectionString);
     }
 
+
     public async Task<LLMResult> AskAsync(string question)
     {
-        string toolDecision = await DecideToolWithLLM(question);
+        string toolDecision = (await DecideToolWithLLM(question)).ToUpperInvariant();
 
         bool useSQL = toolDecision.Contains("SQL");
         bool useRAG = toolDecision.Contains("RAG");
@@ -40,10 +46,10 @@ public class Agent
 
         if (useRAG)
         {
-            // NEW: Retrieve documents from vector database first
             var contextDocs = await _vectorService.SearchAsync(question, topK: 5);
-            var ragResult = await _ragLLM.ProcessQuestionAsync(question);
+            string combinedContext = contextDocs != null ? string.Join("\n", contextDocs) : string.Empty;
 
+            var ragResult = await _ragLLM.ProcessQuestionAsync(question, combinedContext);
 
             finalNotes.AppendLine("[RAG Notes]");
             finalNotes.AppendLine(ragResult.Notes);
@@ -58,9 +64,17 @@ public class Agent
             finalAnswer.AppendLine(normalResult.Answer);
         }
 
+        // ⚠ If no tools selected, fallback to RAG
         if (finalAnswer.Length == 0)
         {
-            finalAnswer.Append("Unable to determine the appropriate tool(s) for this question.");
+            finalNotes.AppendLine("[Fallback to RAG]");
+            var contextDocs = await _vectorService.SearchAsync(question, topK: 5);
+            string combinedContext = contextDocs != null ? string.Join("\n", contextDocs) : string.Empty;
+
+            var ragResult = await _ragLLM.ProcessQuestionAsync(question, combinedContext);
+
+            finalNotes.AppendLine(ragResult.Notes);
+            finalAnswer.AppendLine(ragResult.Answer);
         }
 
         return new LLMResult
@@ -86,6 +100,6 @@ User question:
 {question}";
 
         var decisionResult = await _normalLLM.ProcessQuestionAsync(prompt);
-        return decisionResult.Answer.Trim().ToUpper();
+        return decisionResult.Answer.Trim();
     }
 }

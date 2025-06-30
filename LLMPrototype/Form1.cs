@@ -22,9 +22,14 @@ namespace LLMPrototype
 
             string connectionString = "Server=localhost\\MSSQLSERVER02;Database=GovernmentDocs;Trusted_Connection=True;";
             string sqlModel = "magistral:latest";
-            string normalModel = "llama3";
+            string normalModel = "magistral:latest";
+            string ragModel = "magistral:latest";
 
-            _agent = new Agent(connectionString, sqlModel, normalModel, connectionString);
+            // Passing the same SQL Server connection string for both structured and vector data
+            _agent = new Agent(connectionString, sqlModel, normalModel, connectionString, ragModel);
+
+
+
 
             btnImportJson.Enabled = false;
         }

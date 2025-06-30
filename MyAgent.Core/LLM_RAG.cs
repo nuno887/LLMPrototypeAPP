@@ -1,79 +1,56 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Data.SqlClient;
-using System.Text;
+﻿using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace MyAgent.Core;
 
 public class LLM_RAG
 {
-    private readonly string _connectionString;
+    private readonly OllamaClient _ollama;
 
-    public LLM_RAG(string connectionString)
+    public LLM_RAG(string modelName)
     {
-        _connectionString = connectionString;
+        _ollama = new OllamaClient(modelName);
     }
 
-    public async Task<LLMResult> ProcessQuestionAsync(string question)
+    public async Task<LLMResult> ProcessQuestionAsync(string question, string context)
     {
-        // Vector search logic here (query SQL Server for relevant documents)
-        // Build answer based on retrieved documents
+        string prompt = $@"
+You are a helpful assistant. Use the provided documents to answer the user's question.
 
-        var retrievedDocs = await SearchVectorDatabaseAsync(question);
+Documents:
+{context}
 
-        if (retrievedDocs.Count == 0)
-        {
-            return new LLMResult
-            {
-                Notes = "[RAG] No relevant documents found.",
-                Answer = "No relevant information was found to answer your question."
-            };
-        }
+User question:
+{question}
 
-        var notes = new StringBuilder();
-        notes.AppendLine("=== Retrieved Documents ===");
-        foreach (var doc in retrievedDocs)
-        {
-            notes.AppendLine(doc);
-            notes.AppendLine("---");
-        }
+Rules:
+- Only answer based on the provided documents.
+- If the documents do not contain enough information, say 'Not enough information found in the provided documents'.
+- Do NOT invent facts or provide unrelated answers.
+";
+
+        string response = await _ollama.AskAsync(prompt);
+        string cleanResponse = ExtractResponse(response);
 
         return new LLMResult
         {
-            Notes = notes.ToString(),
-            Answer = string.Join("\n", retrievedDocs)
+            Notes = $"Context used:\n{context}",
+            Answer = cleanResponse
         };
     }
 
-    private async Task<List<string>> SearchVectorDatabaseAsync(string query)
+    private string ExtractResponse(string rawOutput)
     {
-        var results = new List<string>();
-
-        // Example: Replace with your actual vector search SQL
-        string sql = @"
-            DECLARE @queryVector VECTOR(768) = VECTOR::Parse(@Embedding);
-
-            SELECT TOP 5 Completo
-            FROM Relatorios
-            ORDER BY Completo_Embedding.Similarity(@queryVector) DESC;
-        ";
-
-        string embeddingJson = await new EmbeddingGenerator().GenerateEmbeddingAsync(query);
-
-        using var connection = new SqlConnection(_connectionString);
-        await connection.OpenAsync();
-
-        using var cmd = new SqlCommand(sql, connection);
-        cmd.Parameters.AddWithValue("@Embedding", embeddingJson);
-
-        using var reader = await cmd.ExecuteReaderAsync();
-        while (await reader.ReadAsync())
+        try
         {
-            results.Add(reader.GetString(0));
+            var jsonDoc = JsonDocument.Parse(rawOutput);
+            if (jsonDoc.RootElement.TryGetProperty("response", out var responseElement))
+                return responseElement.GetString() ?? rawOutput;
         }
-
-        return results;
+        catch
+        {
+            // Not JSON, return raw output
+        }
+        return rawOutput;
     }
 }
-
