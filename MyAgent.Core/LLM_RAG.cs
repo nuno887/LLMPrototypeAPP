@@ -1,71 +1,79 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
+using System.Data.SqlClient;
 using System.Text;
 using System.Threading.Tasks;
-using System.Net.Http;
-using System.Text.Json;
 
 namespace MyAgent.Core;
 
 public class LLM_RAG
 {
-    private readonly HttpClient _httpClient;
-    private readonly string _ragApiUrl;
+    private readonly string _connectionString;
 
-    public LLM_RAG(string ragApiUrl)
+    public LLM_RAG(string connectionString)
     {
-        _httpClient = new HttpClient();
-        _ragApiUrl = ragApiUrl;
+        _connectionString = connectionString;
     }
 
     public async Task<LLMResult> ProcessQuestionAsync(string question)
     {
-        string prompt = $@"
-You are an AI assistant that retrieves relevant documents to help answer the user's question.
-You have access to a knowledge base of text files and metadata.
-Focus on finding the most relevant information based on the user's intent.
+        // Vector search logic here (query SQL Server for relevant documents)
+        // Build answer based on retrieved documents
 
-User question:
-{question}";
+        var retrievedDocs = await SearchVectorDatabaseAsync(question);
 
-        var payload = JsonSerializer.Serialize(new { question = prompt });
-        var content = new StringContent(payload, Encoding.UTF8, "application/json");
-
-        try
-        {
-            var response = await _httpClient.PostAsync(_ragApiUrl, content);
-            response.EnsureSuccessStatusCode();
-
-            var result = await response.Content.ReadAsStringAsync();
-            string cleanAnswer = result;
-
-            try
-            {
-                using var doc = JsonDocument.Parse(result);
-                if (doc.RootElement.TryGetProperty("response", out var responseElement))
-                {
-                    cleanAnswer = responseElement.GetString() ?? "[RAG returned empty]";
-                }
-            }
-            catch
-            {
-                cleanAnswer = $"[Invalid JSON from RAG] {result}";
-            }
-
-            return new LLMResult
-            {
-                Notes = result,
-                Answer = cleanAnswer
-            };
-        }
-        catch (Exception ex)
+        if (retrievedDocs.Count == 0)
         {
             return new LLMResult
             {
-                Notes = $"[RAG Error] {ex.Message}",
-                Answer = $"[RAG Error] {ex.Message}"
+                Notes = "[RAG] No relevant documents found.",
+                Answer = "No relevant information was found to answer your question."
             };
         }
+
+        var notes = new StringBuilder();
+        notes.AppendLine("=== Retrieved Documents ===");
+        foreach (var doc in retrievedDocs)
+        {
+            notes.AppendLine(doc);
+            notes.AppendLine("---");
+        }
+
+        return new LLMResult
+        {
+            Notes = notes.ToString(),
+            Answer = string.Join("\n", retrievedDocs)
+        };
+    }
+
+    private async Task<List<string>> SearchVectorDatabaseAsync(string query)
+    {
+        var results = new List<string>();
+
+        // Example: Replace with your actual vector search SQL
+        string sql = @"
+            DECLARE @queryVector VECTOR(768) = VECTOR::Parse(@Embedding);
+
+            SELECT TOP 5 Completo
+            FROM Relatorios
+            ORDER BY Completo_Embedding.Similarity(@queryVector) DESC;
+        ";
+
+        string embeddingJson = await new EmbeddingGenerator().GenerateEmbeddingAsync(query);
+
+        using var connection = new SqlConnection(_connectionString);
+        await connection.OpenAsync();
+
+        using var cmd = new SqlCommand(sql, connection);
+        cmd.Parameters.AddWithValue("@Embedding", embeddingJson);
+
+        using var reader = await cmd.ExecuteReaderAsync();
+        while (await reader.ReadAsync())
+        {
+            results.Add(reader.GetString(0));
+        }
+
+        return results;
     }
 }
+

@@ -36,9 +36,12 @@ namespace MyAgent.Core
 
             var embeddingArray = parsed.RootElement.GetProperty("embedding");
 
-            // Convert array to space-separated string
-            var numbers = embeddingArray.EnumerateArray().Select(x => x.GetDouble().ToString("F6"));
-            return string.Join(" ", numbers);
+            // Convert to proper JSON array string
+            var numbers = embeddingArray.EnumerateArray().Select(x => x.GetDouble());
+            string jsonArray = JsonSerializer.Serialize(numbers);
+
+            return jsonArray;  // Returns: [0.123456, 0.234567, 0.345678, ...]
         }
+
     }
 }

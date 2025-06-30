@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -11,12 +9,14 @@ public class Agent
     private readonly LLM_SQL _sqlLLM;
     private readonly LLM_RAG _ragLLM;
     private readonly LLM_Normal _normalLLM;
+    private readonly VectorDatabaseService _vectorService;
 
-    public Agent(string dbPath, string sqlModelName, string ragModelName, string normalModelName)
+    public Agent(string dbConnectionString, string sqlModelName, string normalModelName, string vectorDbConnectionString)
     {
-        _sqlLLM = new LLM_SQL(dbPath, sqlModelName);
-        _ragLLM = new LLM_RAG(ragModelName);
+        _sqlLLM = new LLM_SQL(dbConnectionString, sqlModelName);
+        _ragLLM = new LLM_RAG(vectorDbConnectionString);
         _normalLLM = new LLM_Normal(normalModelName);
+        _vectorService = new VectorDatabaseService(vectorDbConnectionString);
     }
 
     public async Task<LLMResult> AskAsync(string question)
@@ -40,7 +40,11 @@ public class Agent
 
         if (useRAG)
         {
+            // NEW: Retrieve documents from vector database first
+            var contextDocs = await _vectorService.SearchAsync(question, topK: 5);
             var ragResult = await _ragLLM.ProcessQuestionAsync(question);
+
+
             finalNotes.AppendLine("[RAG Notes]");
             finalNotes.AppendLine(ragResult.Notes);
             finalAnswer.AppendLine(ragResult.Answer);
@@ -82,7 +86,6 @@ User question:
 {question}";
 
         var decisionResult = await _normalLLM.ProcessQuestionAsync(prompt);
-
         return decisionResult.Answer.Trim().ToUpper();
     }
 }

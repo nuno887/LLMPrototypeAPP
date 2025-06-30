@@ -20,12 +20,11 @@ namespace LLMPrototype
             richTextBox1.Visible = true;
             webView21.Visible = false;
 
-            string dbPath = "C:\\Users\\nuno.ms.goncalves\\Desktop\\DataBases\\my_database.db";
-            string sqlModel = "magistral:latest ";
-            string ragApiUrl = "http://127.0.0.1:8000/query"; //Needs to change for the SQL Server
+            string connectionString = "Server=localhost\\MSSQLSERVER02;Database=GovernmentDocs;Trusted_Connection=True;";
+            string sqlModel = "magistral:latest";
             string normalModel = "llama3";
 
-            _agent = new Agent(dbPath, sqlModel, ragApiUrl, normalModel);
+            _agent = new Agent(connectionString, sqlModel, normalModel, connectionString);
 
             btnImportJson.Enabled = false;
         }
