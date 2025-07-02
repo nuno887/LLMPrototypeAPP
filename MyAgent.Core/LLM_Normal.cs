@@ -9,10 +9,13 @@ public class LLM_Normal
         _ollama = new OllamaClient(modelName);
     }
 
-    public async Task<LLMResult> ProcessQuestionAsync(string question)
+    public async Task<LLMResult> ProcessQuestionAsync(string question, string contextNotes = "")
     {
         string prompt = $@"
 You are a helpful AI assistant. Answer the user's question clearly and concisely.
+
+Context Notes:
+{contextNotes}
 
 User question:
 {question}";
@@ -37,7 +40,7 @@ User question:
 
         return new LLMResult
         {
-            Notes = result,      // Keep raw LLM output as Notes
+            Notes = cleanAnswer, // Keep LLM response in Notes
             Answer = cleanAnswer // Cleaned, readable answer
         };
     }

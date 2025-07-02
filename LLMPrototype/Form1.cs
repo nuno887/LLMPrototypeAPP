@@ -10,7 +10,6 @@ namespace LLMPrototype
     public partial class Form1 : Form
     {
 
-        private LLM_SQL _sqlLLM;
         private Agent _agent;
 
         public Form1()
@@ -21,9 +20,9 @@ namespace LLMPrototype
             webView21.Visible = false;
 
             string connectionString = "Server=localhost\\MSSQLSERVER02;Database=GovernmentDocs;Trusted_Connection=True;";
-            string sqlModel = "magistral:latest";
-            string normalModel = "magistral:latest";
-            string ragModel = "magistral:latest";
+            string sqlModel = "llama3.2:latest";
+            string normalModel = "llama3.2:latest";
+            string ragModel = "llama3.2:latest";
 
             // Passing the same SQL Server connection string for both structured and vector data
             _agent = new Agent(connectionString, sqlModel, normalModel, connectionString, ragModel);

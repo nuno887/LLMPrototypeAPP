@@ -6,7 +6,7 @@ namespace MyAgent.Core;
 
 public class Agent
 {
-    private readonly LLM_SQL _sqlLLM;
+    //private readonly LLM_SQL _sqlLLM;
     private readonly LLM_RAG _ragLLM;
     private readonly LLM_Normal _normalLLM;
     private readonly VectorDatabaseService _vectorService;
@@ -18,7 +18,7 @@ public class Agent
     string vectorDbConnectionString,
     string ragModelName)
     {
-        _sqlLLM = new LLM_SQL(dbConnectionString, sqlModelName);
+        //_sqlLLM = new LLM_SQL(dbConnectionString, sqlModelName);
         _ragLLM = new LLM_RAG(ragModelName);
         _normalLLM = new LLM_Normal(normalModelName);
         _vectorService = new VectorDatabaseService(vectorDbConnectionString);
@@ -42,15 +42,15 @@ public class Agent
 
         if (useSQL)
         {
-            var sqlResult = await _sqlLLM.ProcessQuestionAsync(question);
+            //var sqlResult = await _sqlLLM.ProcessQuestionAsync(question);
             finalNotes.AppendLine("[SQL Notes]");
-            finalNotes.AppendLine(sqlResult.Notes);
-            finalAnswer.AppendLine(sqlResult.Answer);
+            //finalNotes.AppendLine(sqlResult.Notes);
+            //finalAnswer.AppendLine(sqlResult.Answer);
         }
 
         if (useRAG)
         {
-            var contextDocs = await _vectorService.SearchAsync(question, topK: 5);
+            var contextDocs = await _vectorService.SearchAsync(question, topK: 1);
             string combinedContext = contextDocs != null ? string.Join("\n", contextDocs) : string.Empty;
 
             var ragResult = await _ragLLM.ProcessQuestionAsync(question, combinedContext);
@@ -62,13 +62,13 @@ public class Agent
 
         if (useNORMAL)
         {
-            var normalResult = await _normalLLM.ProcessQuestionAsync(question);
+            var normalResult = await _normalLLM.ProcessQuestionAsync(question, finalNotes.ToString());
             finalNotes.AppendLine("[NORMAL Notes]");
             finalNotes.AppendLine(normalResult.Notes);
             finalAnswer.AppendLine(normalResult.Answer);
         }
 
-        // ⚠ If no tools selected, fallback to RAG
+        // If no tools selected, fallback to RAG
         if (finalAnswer.Length == 0)
         {
             finalNotes.AppendLine("[Fallback to RAG]");

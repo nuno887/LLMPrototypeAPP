@@ -37,11 +37,22 @@ namespace MyAgent.Core
             };
 
             string sql = $@"
-                SELECT TOP (@TopK) RelatorioId, RelatorioIdentifier, {target},
-                VECTOR_DISTANCE('cosine', {embeddingColumn}, CAST(@QueryEmbedding AS VECTOR(768))) AS Distance
-                FROM Relatorios
-                ORDER BY Distance ASC;
-            ";
+    SELECT TOP (@TopK) 
+        r.RelatorioId, 
+        r.RelatorioIdentifier, 
+        r.Sumario,
+        r.Texto,
+        r.Anexo,
+        r.Completo,
+        b.BranchName,
+        p.PdfName,
+        VECTOR_DISTANCE('cosine', {embeddingColumn}, CAST(@QueryEmbedding AS VECTOR(768))) AS Distance
+    FROM Relatorios r
+    LEFT JOIN Branches b ON r.BranchId = b.BranchId
+    LEFT JOIN PdfFiles p ON r.PdfId = p.PdfId
+    ORDER BY Distance ASC;
+";
+
 
             using var connection = new SqlConnection(_connectionString);
             await connection.OpenAsync();
@@ -54,12 +65,31 @@ namespace MyAgent.Core
 
             while (await reader.ReadAsync())
             {
-                string identifier = reader.GetString(1);
-                string content = reader.IsDBNull(2) ? string.Empty : reader.GetString(2);
-                results.Add($"[Relatorio: {identifier}] {content}");
+                string identifier = reader.IsDBNull(1) ? string.Empty : reader.GetString(1);
+                string sumario = reader.IsDBNull(2) ? string.Empty : reader.GetString(2);
+                string texto = reader.IsDBNull(3) ? string.Empty : reader.GetString(3);
+                string anexo = reader.IsDBNull(4) ? string.Empty : reader.GetString(4);
+                string completo = reader.IsDBNull(5) ? string.Empty : reader.GetString(5);
+                string branchName = reader.IsDBNull(6) ? string.Empty : reader.GetString(6);
+                string pdfName = reader.IsDBNull(7) ? string.Empty : reader.GetString(7);
+                double distance = reader.IsDBNull(8) ? 0.0 : reader.GetDouble(8);
+
+                string resultText = $@"
+[Relatorio: {identifier}]
+[Branch: {branchName}]
+[PDF: {pdfName}]
+[Sumario]: {sumario}
+[Texto]: {texto}
+[Anexo]: {anexo}
+[Completo]: {completo}
+[Distance]: {distance}
+";
+
+                results.Add(resultText.Trim());
             }
 
             return results;
+
         }
     }
 }
