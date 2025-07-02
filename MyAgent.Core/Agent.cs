@@ -50,7 +50,7 @@ public class Agent
 
         if (useRAG)
         {
-            var contextDocs = await _vectorService.SearchAsync(question, topK: 1);
+            var contextDocs = await _vectorService.SearchAsync(question, topK: 5);
             string combinedContext = contextDocs != null ? string.Join("\n", contextDocs) : string.Empty;
 
             var ragResult = await _ragLLM.ProcessQuestionAsync(question, combinedContext);
