@@ -36,6 +36,10 @@ public class Agent
         var finalNotes = new StringBuilder();
         var finalAnswer = new StringBuilder();
 
+        finalNotes.Insert(0, $"[Tool Decision]: {toolDecision}\n\n");
+
+
+
         if (useSQL)
         {
             var sqlResult = await _sqlLLM.ProcessQuestionAsync(question);

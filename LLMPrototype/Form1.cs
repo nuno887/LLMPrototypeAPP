@@ -107,6 +107,7 @@ namespace LLMPrototype
 
         private async void btnAsk_Click(object sender, EventArgs e)
         {
+            btnAsk.Enabled = false;
             try
             {
                 string question = richTextBoxQuestion.Text.Trim();
@@ -129,6 +130,11 @@ namespace LLMPrototype
             {
                 MessageBox.Show($"[Unhandled Error]\n{ex.Message}\n\n{ex.StackTrace}");
             }
+            finally
+            {
+                btnAsk.Enabled = true;
+            
+            }
         }
 
 
@@ -145,7 +151,7 @@ namespace LLMPrototype
 
         private async void btnImportJson_Click(object sender, EventArgs e)
         {
-            btnImportJson.Enabled = false; // Disable the button at the start
+            btnImportJson.Enabled = false; 
 
             string jsonFolder = @"C:\Users\nuno.ms.goncalves\Desktop\SpaCy_NET\DATA\JSON";
             string connectionString = "Server=localhost\\MSSQLSERVER02;Database=GovernmentDocs;Trusted_Connection=True;";
