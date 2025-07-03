@@ -46,7 +46,7 @@ namespace MyAgent.Core
         r.Completo,
         b.BranchName,
         p.PdfName,
-        VECTOR_DISTANCE('cosine', {embeddingColumn}, CAST(@QueryEmbedding AS VECTOR(768))) AS Distance
+        VECTOR_DISTANCE('cosine', Completo_Embedding, CAST(@QueryEmbedding AS VECTOR(768))) AS Distance
     FROM Relatorios r
     LEFT JOIN Branches b ON r.BranchId = b.BranchId
     LEFT JOIN PdfFiles p ON r.PdfId = p.PdfId
@@ -74,6 +74,7 @@ namespace MyAgent.Core
                 string pdfName = reader.IsDBNull(7) ? string.Empty : reader.GetString(7);
                 double distance = reader.IsDBNull(8) ? 0.0 : reader.GetDouble(8);
 
+                /*
                 string resultText = $@"
 [Relatorio: {identifier}]
 [Branch: {branchName}]
@@ -83,6 +84,13 @@ namespace MyAgent.Core
 [Anexo]: {anexo}
 [Completo]: {completo}
 [Distance]: {distance}
+";
+                */
+                string resultText = $@"
+[Relatorio: {identifier}]
+[Branch: {branchName}]
+[PDF: {pdfName}]
+[Completo]: {completo}
 ";
 
                 results.Add(resultText.Trim());

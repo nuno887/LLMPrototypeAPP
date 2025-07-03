@@ -122,15 +122,17 @@ namespace LLMPrototype
                     return;
                 }
 
-                // Do not overwrite conversation area here
+                // Show current notes for debugging, no need to touch conversation box yet
                 richTextBoxNotes.Text = _currentContext.GetNotes();
 
                 var result = await _agent.AskAsync(question, _currentContext);
 
-                _currentContext.AppendConversation(question, result.Answer);
+                // Show clean final conversation
+                richTextBoxAnswer.Text = _currentContext.GetConversation();
+                richTextBoxNotes.Text = _currentContext.GetNotes();
 
-                richTextBoxAnswer.Text = _currentContext.GetConversation();  // Show full conversation
-                richTextBoxNotes.Text = _currentContext.GetNotes();          // Show notes/debug info
+                // Optional: Show just the clean assistant reply somewhere, like a status label
+                // lblLastAnswer.Text = result.Answer;
             }
             catch (Exception ex)
             {
@@ -142,6 +144,7 @@ namespace LLMPrototype
                 btnNewConversation.Enabled = true;
             }
         }
+
 
 
 

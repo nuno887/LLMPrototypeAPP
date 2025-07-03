@@ -35,7 +35,6 @@ public class Agent
     public async Task<LLMResult> AskAsync(string question, ConversationContext context)
     {
         var tools = await DecideTools(question);
-
         context.AppendNotes($"[Tool Decision]: {string.Join(", ", tools)}");
 
         if (tools.Contains(Tool.SQL))
@@ -47,13 +46,9 @@ public class Agent
             context.AppendNotes($"[Notes Sufficiency Confidence]: {confidence}");
 
             if (confidence == "YES")
-            {
                 context.AppendNotes("[RAG Skipped - Notes sufficient]");
-            }
             else
-            {
                 await RunRAG(question, context);
-            }
         }
 
         if (tools.Contains(Tool.NORMAL))
@@ -62,12 +57,14 @@ public class Agent
         if (!context.HasAnswer)
             await RunFallback(question, context);
 
-        context.AppendConversation(question, context.GetAnswer());
+        // Only append essential, user-facing response
+        string cleanAnswer = context.GetCleanAnswer();
+        context.AppendConversation(question, cleanAnswer);
 
         return new LLMResult
         {
             Notes = context.GetNotes(),
-            Answer = context.GetAnswer()
+            Answer = cleanAnswer
         };
     }
 
@@ -77,20 +74,23 @@ public class Agent
 You are an expert AI assistant deciding which specialized tools should answer the user's question.
 
 Available tools:
-- RAG Tool: ONLY for questions requiring external knowledge, documents, databases, or precise retrieval.
-- NORMAL Tool: For general reasoning, conversation, or tasks not requiring external lookup.
+- RAG Tool: ONLY use this if the user's question requires external knowledge, document retrieval, database lookup, or facts the assistant cannot answer from general reasoning alone.
+- NORMAL Tool: Use this for general reasoning, conversation, or questions that can be answered without external sources.
 
-Select RAG only if strictly necessary. Respond with one or more of: RAG, NORMAL, separated by plus signs (+).
+You should prefer the NORMAL Tool when possible. Only use the RAG Tool if absolutely necessary.
+
+You may select one or more of the following: SQL, RAG, NORMAL. Separate choices with plus signs (+).
 
 User question:
 {question}";
+
 
         var decisionResult = await _normalLLM.ProcessQuestionAsync(prompt);
         string decisionText = decisionResult.Answer.Trim().ToUpperInvariant();
 
         var tools = new List<Tool>();
 
-        //if (decisionText.Contains("SQL")) tools.Add(Tool.SQL);
+        if (decisionText.Contains("SQL")) tools.Add(Tool.SQL);
         if (decisionText.Contains("RAG")) tools.Add(Tool.RAG);
         if (decisionText.Contains("NORMAL")) tools.Add(Tool.NORMAL);
 
@@ -100,7 +100,7 @@ User question:
     private async Task RunSQL(string question, ConversationContext context)
     {
         context.AppendNotes("[SQL Notes]");
-        // Future: SQL Tool logic here
+        // Future SQL logic
     }
 
     private async Task RunRAG(string question, ConversationContext context)
@@ -140,23 +140,20 @@ User question:
     private async Task<string> NotesContainAnswerConfidence(string question, ConversationContext context)
     {
         string prompt = $@"
-You are an AI determining how well the existing notes answer the user's question.
+Determine if the notes answer the question.
 
-Possible responses:
-- YES: The notes fully answer the question with high confidence.
-- MAYBE: The notes partially answer the question or lack full detail.
-- NO: The notes do not answer the question.
+Reply with:
+- YES: Notes fully answer.
+- MAYBE: Notes partially answer.
+- NO: Notes insufficient.
 
-Existing Notes:
+Notes:
 {context.GetNotes()}
 
-User Question:
-{question}
-
-Respond with one of: YES, MAYBE, NO.";
+Question:
+{question}";
 
         var result = await _normalLLM.ProcessQuestionAsync(prompt);
         return result.Answer.Trim().ToUpperInvariant();
     }
-
 }
