@@ -40,6 +40,7 @@
             richTextBoxNotes = new RichTextBox();
             btnImportJson = new Button();
             btnTestConnection = new Button();
+            btnNewConversation = new Button();
             ((System.ComponentModel.ISupportInitialize)webView21).BeginInit();
             tabControl1.SuspendLayout();
             Answer.SuspendLayout();
@@ -165,11 +166,22 @@
             btnTestConnection.UseVisualStyleBackColor = true;
             btnTestConnection.Click += btnTestConnection_Click;
             // 
+            // btnNewConversation
+            // 
+            btnNewConversation.Location = new Point(484, 662);
+            btnNewConversation.Name = "btnNewConversation";
+            btnNewConversation.Size = new Size(111, 23);
+            btnNewConversation.TabIndex = 9;
+            btnNewConversation.Text = "NewConversation";
+            btnNewConversation.UseVisualStyleBackColor = true;
+            btnNewConversation.Click += btnNewConversation_Click;
+            // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(1278, 741);
+            Controls.Add(btnNewConversation);
             Controls.Add(btnTestConnection);
             Controls.Add(btnImportJson);
             Controls.Add(tabControl1);
@@ -202,5 +214,6 @@
         private RichTextBox richTextBoxNotes;
         private Button btnImportJson;
         private Button btnTestConnection;
+        private Button btnNewConversation;
     }
 }

@@ -1,22 +1,30 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace MyAgent.Core;
 
+public enum Tool
+{
+    SQL,
+    RAG,
+    NORMAL
+}
+
 public class Agent
 {
-    //private readonly LLM_SQL _sqlLLM;
     private readonly LLM_RAG _ragLLM;
     private readonly LLM_Normal _normalLLM;
     private readonly VectorDatabaseService _vectorService;
 
     public Agent(
-    string dbConnectionString,
-    string sqlModelName,
-    string normalModelName,
-    string vectorDbConnectionString,
-    string ragModelName)
+        string dbConnectionString,
+        string sqlModelName,
+        string normalModelName,
+        string vectorDbConnectionString,
+        string ragModelName)
     {
         //_sqlLLM = new LLM_SQL(dbConnectionString, sqlModelName);
         _ragLLM = new LLM_RAG(ragModelName);
@@ -24,86 +32,131 @@ public class Agent
         _vectorService = new VectorDatabaseService(vectorDbConnectionString);
     }
 
-
-    public async Task<LLMResult> AskAsync(string question)
+    public async Task<LLMResult> AskAsync(string question, ConversationContext context)
     {
-        string toolDecision = (await DecideToolWithLLM(question)).ToUpperInvariant();
+        var tools = await DecideTools(question);
 
-        bool useSQL = toolDecision.Contains("SQL");
-        bool useRAG = toolDecision.Contains("RAG");
-        bool useNORMAL = toolDecision.Contains("NORMAL");
+        context.AppendNotes($"[Tool Decision]: {string.Join(", ", tools)}");
 
-        var finalNotes = new StringBuilder();
-        var finalAnswer = new StringBuilder();
+        if (tools.Contains(Tool.SQL))
+            await RunSQL(question, context);
 
-        finalNotes.Insert(0, $"[Tool Decision]: {toolDecision}\n\n");
-
-
-
-        if (useSQL)
+        if (tools.Contains(Tool.RAG))
         {
-            //var sqlResult = await _sqlLLM.ProcessQuestionAsync(question);
-            finalNotes.AppendLine("[SQL Notes]");
-            //finalNotes.AppendLine(sqlResult.Notes);
-            //finalAnswer.AppendLine(sqlResult.Answer);
+            string confidence = await NotesContainAnswerConfidence(question, context);
+            context.AppendNotes($"[Notes Sufficiency Confidence]: {confidence}");
+
+            if (confidence == "YES")
+            {
+                context.AppendNotes("[RAG Skipped - Notes sufficient]");
+            }
+            else
+            {
+                await RunRAG(question, context);
+            }
         }
 
-        if (useRAG)
-        {
-            var contextDocs = await _vectorService.SearchAsync(question, topK: 5);
-            string combinedContext = contextDocs != null ? string.Join("\n", contextDocs) : string.Empty;
+        if (tools.Contains(Tool.NORMAL))
+            await RunNormal(question, context);
 
-            var ragResult = await _ragLLM.ProcessQuestionAsync(question, combinedContext);
+        if (!context.HasAnswer)
+            await RunFallback(question, context);
 
-            finalNotes.AppendLine("[RAG Notes]");
-            finalNotes.AppendLine(ragResult.Notes);
-            finalAnswer.AppendLine(ragResult.Answer);
-        }
-
-        if (useNORMAL)
-        {
-            var normalResult = await _normalLLM.ProcessQuestionAsync(question, finalNotes.ToString());
-            finalNotes.AppendLine("[NORMAL Notes]");
-            finalNotes.AppendLine(normalResult.Notes);
-            finalAnswer.AppendLine(normalResult.Answer);
-        }
-
-        // If no tools selected, fallback to RAG
-        if (finalAnswer.Length == 0)
-        {
-            finalNotes.AppendLine("[Fallback to RAG]");
-            var contextDocs = await _vectorService.SearchAsync(question, topK: 5);
-            string combinedContext = contextDocs != null ? string.Join("\n", contextDocs) : string.Empty;
-
-            var ragResult = await _ragLLM.ProcessQuestionAsync(question, combinedContext);
-
-            finalNotes.AppendLine(ragResult.Notes);
-            finalAnswer.AppendLine(ragResult.Answer);
-        }
+        context.AppendConversation(question, context.GetAnswer());
 
         return new LLMResult
         {
-            Notes = finalNotes.ToString().Trim(),
-            Answer = finalAnswer.ToString().Trim()
+            Notes = context.GetNotes(),
+            Answer = context.GetAnswer()
         };
     }
 
-    private async Task<string> DecideToolWithLLM(string question)
+    private async Task<List<Tool>> DecideTools(string question)
     {
         string prompt = $@"
 You are an expert AI assistant deciding which specialized tools should answer the user's question.
 
 Available tools:
-- SQL Tool: for structured data, databases, table-based information
-- RAG Tool: for unstructured data, text documents, knowledge retrieval
-- NORMAL Tool: for general reasoning, conversation, or tasks not requiring database or document access
+- RAG Tool: ONLY for questions requiring external knowledge, documents, databases, or precise retrieval.
+- NORMAL Tool: For general reasoning, conversation, or tasks not requiring external lookup.
 
-You can select more than one tool if appropriate. Respond with one or more of: SQL, RAG, NORMAL, separated by plus signs (+).
+Select RAG only if strictly necessary. Respond with one or more of: RAG, NORMAL, separated by plus signs (+).
 
 User question:
 {question}";
 
         var decisionResult = await _normalLLM.ProcessQuestionAsync(prompt);
-        return decisionResult.Answer.Trim();
+        string decisionText = decisionResult.Answer.Trim().ToUpperInvariant();
+
+        var tools = new List<Tool>();
+
+        //if (decisionText.Contains("SQL")) tools.Add(Tool.SQL);
+        if (decisionText.Contains("RAG")) tools.Add(Tool.RAG);
+        if (decisionText.Contains("NORMAL")) tools.Add(Tool.NORMAL);
+
+        return tools;
     }
+
+    private async Task RunSQL(string question, ConversationContext context)
+    {
+        context.AppendNotes("[SQL Notes]");
+        // Future: SQL Tool logic here
+    }
+
+    private async Task RunRAG(string question, ConversationContext context)
+    {
+        var contextDocs = await _vectorService.SearchAsync(question, topK: 5);
+        string combinedContext = contextDocs != null ? string.Join("\n", contextDocs) : string.Empty;
+
+        var ragResult = await _ragLLM.ProcessQuestionAsync(question, combinedContext);
+
+        context.AppendNotes("[RAG Notes]");
+        context.AppendNotes(ragResult.Notes);
+        context.AppendAnswer(ragResult.Answer);
+    }
+
+    private async Task RunNormal(string question, ConversationContext context)
+    {
+        var normalResult = await _normalLLM.ProcessQuestionAsync(question, context.GetNotes());
+
+        context.AppendNotes("[NORMAL Notes]");
+        context.AppendNotes(normalResult.Notes);
+        context.AppendAnswer(normalResult.Answer);
+    }
+
+    private async Task RunFallback(string question, ConversationContext context)
+    {
+        context.AppendNotes("[Fallback to RAG]");
+
+        var contextDocs = await _vectorService.SearchAsync(question, topK: 5);
+        string combinedContext = contextDocs != null ? string.Join("\n", contextDocs) : string.Empty;
+
+        var ragResult = await _ragLLM.ProcessQuestionAsync(question, combinedContext);
+
+        context.AppendNotes(ragResult.Notes);
+        context.AppendAnswer(ragResult.Answer);
+    }
+
+    private async Task<string> NotesContainAnswerConfidence(string question, ConversationContext context)
+    {
+        string prompt = $@"
+You are an AI determining how well the existing notes answer the user's question.
+
+Possible responses:
+- YES: The notes fully answer the question with high confidence.
+- MAYBE: The notes partially answer the question or lack full detail.
+- NO: The notes do not answer the question.
+
+Existing Notes:
+{context.GetNotes()}
+
+User Question:
+{question}
+
+Respond with one of: YES, MAYBE, NO.";
+
+        var result = await _normalLLM.ProcessQuestionAsync(prompt);
+        return result.Answer.Trim().ToUpperInvariant();
+    }
+
 }

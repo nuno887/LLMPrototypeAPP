@@ -11,6 +11,8 @@ namespace LLMPrototype
     {
 
         private Agent _agent;
+        private ConversationContext _currentContext = new ConversationContext();
+
 
         public Form1()
         {
@@ -26,6 +28,7 @@ namespace LLMPrototype
 
             // Passing the same SQL Server connection string for both structured and vector data
             _agent = new Agent(connectionString, sqlModel, normalModel, connectionString, ragModel);
+
 
 
 
@@ -107,6 +110,8 @@ namespace LLMPrototype
         private async void btnAsk_Click(object sender, EventArgs e)
         {
             btnAsk.Enabled = false;
+            btnNewConversation.Enabled = false;
+
             try
             {
                 string question = richTextBoxQuestion.Text.Trim();
@@ -117,13 +122,15 @@ namespace LLMPrototype
                     return;
                 }
 
-                richTextBoxAnswer.Text = "Processing...";
-                richTextBoxNotes.Text = "";
+                // Do not overwrite conversation area here
+                richTextBoxNotes.Text = _currentContext.GetNotes();
 
-                var result = await _agent.AskAsync(question);
+                var result = await _agent.AskAsync(question, _currentContext);
 
-                richTextBoxAnswer.Text = result.Answer;
-                richTextBoxNotes.Text = result.Notes;
+                _currentContext.AppendConversation(question, result.Answer);
+
+                richTextBoxAnswer.Text = _currentContext.GetConversation();  // Show full conversation
+                richTextBoxNotes.Text = _currentContext.GetNotes();          // Show notes/debug info
             }
             catch (Exception ex)
             {
@@ -132,9 +139,12 @@ namespace LLMPrototype
             finally
             {
                 btnAsk.Enabled = true;
-            
+                btnNewConversation.Enabled = true;
             }
         }
+
+
+
 
 
         private void richTextBox2_TextChanged(object sender, EventArgs e)
@@ -150,7 +160,7 @@ namespace LLMPrototype
 
         private async void btnImportJson_Click(object sender, EventArgs e)
         {
-            btnImportJson.Enabled = false; 
+            btnImportJson.Enabled = false;
 
             string jsonFolder = @"C:\Users\nuno.ms.goncalves\Desktop\SpaCy_NET\DATA\JSON";
             string connectionString = "Server=localhost\\MSSQLSERVER02;Database=GovernmentDocs;Trusted_Connection=True;";
@@ -203,5 +213,12 @@ namespace LLMPrototype
             }
         }
 
+        private void btnNewConversation_Click(object sender, EventArgs e)
+        {
+            _currentContext = new ConversationContext();
+            richTextBoxNotes.Clear();
+            richTextBoxAnswer.Clear();
+            MessageBox.Show("Started new conversation.");
+        }
     }
 }
